@@ -133,3 +133,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 ORS_ALLOWED_ORIGINS = [
     "http://localhost:4200",
 ]
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+]
+AUTH_USER_MODEL = 'api.User'

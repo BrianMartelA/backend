@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from .serializers import RegisterSerializer
 from rest_framework.decorators import api_view
+from django.contrib.auth import authenticate
 
 class RegisterView(APIView):
     def post(self, request):
@@ -16,6 +17,8 @@ class RegisterView(APIView):
         
         print(serializer.errors)  # 👈 Esto muestra los errores en la consola
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 
 @api_view(['GET'])
 def hello_world(request):
