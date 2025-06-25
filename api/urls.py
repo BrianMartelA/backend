@@ -4,6 +4,6 @@ from .views import RegisterView
 
 urlpatterns = [
     path('hello/', hello_world),
-    path('register/', RegisterView.as_view(), name='register'),
+    path('auth/register/', RegisterView.as_view(), name='register'),
 
 ]

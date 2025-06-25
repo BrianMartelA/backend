@@ -21,6 +21,36 @@ class RegisterSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Las contraseñas no coinciden")
         return data
 
+    def validate_rut(self, value):
+        # Chilean RUT validation (basic)
+        if not re.match(r'^\d{7,8}-[kK\d]$', value):
+            raise serializers.ValidationError("El RUT debe tener el formato 12345678-9 o 12345678-K.")
+        if User.objects.filter(rut=value).exists():
+            raise serializers.ValidationError("Este RUT ya está registrado.")
+        return value
+
+    def validate_phone(self, value):
+        # Only digits, length between 9 and 12
+        if not re.match(r'^\d{9,12}$', value):
+            raise serializers.ValidationError("El teléfono debe contener solo números y tener entre 9 y 12 dígitos.")
+        return value
+
+    def validate_first_name(self, value):
+        if not re.match(r'^[A-Za-záéíóúÁÉÍÓÚñÑ\s]+$', value):
+            raise serializers.ValidationError("El nombre solo puede contener letras y espacios.")
+        return value
+
+    def validate_last_name(self, value):
+        if not re.match(r'^[A-Za-záéíóúÁÉÍÓÚñÑ\s]+$', value):
+            raise serializers.ValidationError("El apellido paterno solo puede contener letras y espacios.")
+        return value
+
+    def validate_second_last_name(self, value):
+        if not re.match(r'^[A-Za-záéíóúÁÉÍÓÚñÑ\s]+$', value):
+            raise serializers.ValidationError("El apellido materno solo puede contener letras y espacios.")
+        return value
+
+
     def validate_email(self, value):
             domain = value.split('@')[-1]
             if domain not in ALLOWED_DOMAINS:
