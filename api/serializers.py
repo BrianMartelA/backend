@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User  # o tu modelo personalizado
+from .models import User , Producto
 import re
 
 
@@ -76,3 +76,16 @@ class RegisterSerializer(serializers.ModelSerializer):
         user.save()
         return user
 
+#Cristian toco esto
+class ProductoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Producto
+        fields = ['id', 'nombre', 'categoria', 'stock', 'imagen', 'precio', 'creado_por', 'fecha_creacion']
+        extra_kwargs = {
+            'creado_por': {'read_only': True}
+        }
+    
+    def create(self, validated_data):
+        # Asigna automáticamente el usuario actual como creador
+        validated_data['creado_por'] = self.context['request'].user
+        return super().create(validated_data)
