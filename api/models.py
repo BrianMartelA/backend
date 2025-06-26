@@ -21,7 +21,7 @@ class Producto(models.Model):
     categoria = models.CharField(max_length=50, choices=CATEGORIAS)
     stock = models.PositiveIntegerField()
     imagen = models.ImageField(upload_to='productos/')
-    precio = models.DecimalField(max_digits=10, decimal_places=2)
+    precio = models.IntegerField()
     creado_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='productos_creados')
     fecha_creacion = models.DateTimeField(auto_now_add=True)
 

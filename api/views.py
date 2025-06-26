@@ -34,9 +34,9 @@ class ProductoViewSet(viewsets.ModelViewSet):
     serializer_class = ProductoSerializer
     
     def get_permissions(self):
-        if self.action in ['create', 'update', 'partial_update', 'destroy']:
-            return [IsAuthenticated(), IsAdminUser()]
-        return [IsAuthenticated()]
+        if self.action in ['list', 'retrieve']:
+            return []
+        return [IsAdminUser()]
     
     def perform_create(self, serializer):
         serializer.save(creado_por=self.request.user)
