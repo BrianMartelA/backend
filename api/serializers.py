@@ -53,9 +53,12 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     def validate_email(self, value):
             domain = value.split('@')[-1]
+            normalize = value.lower()
             if domain not in ALLOWED_DOMAINS:
                 raise serializers.ValidationError("Solo se permiten correos de Gmail, Duoc o Yahoo.")
-            return value
+            if User.objects.filter(email__iexact=normalize).exists():
+                raise serializers.ValidationError("este correo ya existe")
+            return normalize
     def validate_password(self, value):
         if len(value) < 8:
             raise serializers.ValidationError("La contraseña debe tener al menos 8 caracteres.")
