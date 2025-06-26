@@ -20,7 +20,7 @@ class Migration(migrations.Migration):
                 ('categoria', models.CharField(choices=[('HERRAMIENTAS', 'Herramientas'), ('ELECTRICOS', 'Materiales Eléctricos'), ('FONTANERIA', 'Fontanería'), ('CONSTRUCCION', 'Materiales de Construcción')], max_length=50)),
                 ('stock', models.PositiveIntegerField()),
                 ('imagen', models.ImageField(upload_to='productos/')),
-                ('precio', models.DecimalField(decimal_places=2, max_digits=10)),
+                ('precio', models.DecimalField(decimal_places=2, max_digits=10)), #en el models.py actual esto es un models.IntegerField()
                 ('fecha_creacion', models.DateTimeField(auto_now_add=True)),
                 ('creado_por', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='productos_creados', to=settings.AUTH_USER_MODEL)),
             ],
