@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import User  # o tu modelo personalizado
+
+from .models import User , Producto  # o tu modelo personalizado
 from django.utils.timezone import localtime
 import re
 
@@ -77,6 +78,21 @@ class RegisterSerializer(serializers.ModelSerializer):
         user.save()
         return user
 
+
+#Cristian toco esto
+class ProductoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Producto
+        fields = ['id', 'nombre', 'categoria', 'stock', 'imagen', 'precio', 'creado_por', 'fecha_creacion']
+        extra_kwargs = {
+            'creado_por': {'read_only': True}
+        }
+    
+    def create(self, validated_data):
+        # Asigna automáticamente el usuario actual como creador
+        validated_data['creado_por'] = self.context['request'].user
+        return super().create(validated_data)
+
 class UserManagementSerializer(serializers.ModelSerializer):
     tipo_usuario = serializers.SerializerMethodField()
     fecha_ingreso = serializers.SerializerMethodField()
@@ -98,3 +114,4 @@ class UserManagementSerializer(serializers.ModelSerializer):
 
     def get_fecha_ingreso(self, obj):
         return localtime(obj.date_joined).strftime("%d/%m/%Y %H:%M")
+
