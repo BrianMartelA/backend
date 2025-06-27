@@ -1,4 +1,6 @@
 from rest_framework import serializers
+from rest_framework import serializers
+from rest_framework.authtoken.serializers import AuthTokenSerializer
 
 from .models import User , Producto  # o tu modelo personalizado
 from django.utils.timezone import localtime
@@ -73,6 +75,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         validated_data['username'] = validated_data['email']  # Usa email como username
         validated_data.pop('conf_pass')  # Elimina el campo no necesario para crear el usuario
         password = validated_data.pop('password')
+        
         user = User.objects.create_user(**validated_data)
         user.set_password(password)
         user.save()
@@ -115,3 +118,5 @@ class UserManagementSerializer(serializers.ModelSerializer):
     def get_fecha_ingreso(self, obj):
         return localtime(obj.date_joined).strftime("%d/%m/%Y %H:%M")
 
+    class EmailAuthTokenSerializer(AuthTokenSerializer):
+        username = serializers.EmailField(label="Email")
