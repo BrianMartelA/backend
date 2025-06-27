@@ -30,6 +30,11 @@ class RegisterView(APIView):
 def hello_world(request):
     return Response({"message": "Hola desde Django!"})
 
+@api_view(['GET'])
+def prod(request):
+    queryset = Producto.objects.all()
+    serializer_class = ProductoSerializer(queryset, many=True, context={'request': request})
+    return Response(serializer_class.data)
 
 #Cristian toco esto
 class ProductoViewSet(viewsets.ModelViewSet):

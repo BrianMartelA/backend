@@ -12,5 +12,6 @@ urlpatterns = [
     path('users/', user_list, name='user-list'),
     path('users/<int:pk>/', delete_user, name='delete-user'),
     path('productos/mis-productos/', mis_productos, name='mis_productos'),
+    path('productos/all/',prod,name='productos'),
     path('', include(router.urls)),
 ]
