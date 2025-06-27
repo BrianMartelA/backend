@@ -114,4 +114,4 @@ class UserManagementSerializer(serializers.ModelSerializer):
 
     def get_fecha_ingreso(self, obj):
         return localtime(obj.date_joined).strftime("%d/%m/%Y %H:%M")
-
+    
