@@ -22,7 +22,9 @@ class RegisterView(APIView):
         print(serializer.errors)  # 👈 Esto muestra los errores en la consola
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
+@api_view(['GET'])
+def hello_world(request):
+    return Response({"message": "Hola desde Django!"})
 
 @api_view(['GET'])
 #@permission_classes([IsAdminUser])
