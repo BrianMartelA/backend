@@ -139,6 +139,7 @@ AUTHENTICATION_BACKENDS = [
 ]
 AUTH_USER_MODEL = 'api.User'
 
+
 #Cristian añadio esto
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
@@ -146,3 +147,11 @@ MEDIA_ROOT = BASE_DIR / 'media'
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:4200",
 ]
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.TokenAuthentication',  # Opcional si usas tokens
+    ]
+}
+

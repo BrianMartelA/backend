@@ -1,5 +1,7 @@
 from rest_framework import serializers
-from .models import User , Producto
+
+from .models import User , Producto  # o tu modelo personalizado
+from django.utils.timezone import localtime
 import re
 
 
@@ -71,10 +73,11 @@ class RegisterSerializer(serializers.ModelSerializer):
         validated_data['username'] = validated_data['email']  # Usa email como username
         validated_data.pop('conf_pass')  # Elimina el campo no necesario para crear el usuario
         password = validated_data.pop('password')
-        user = User(**validated_data)
+        user = User.objects.create_user(**validated_data)
         user.set_password(password)
         user.save()
         return user
+
 
 #Cristian toco esto
 class ProductoSerializer(serializers.ModelSerializer):
@@ -89,3 +92,26 @@ class ProductoSerializer(serializers.ModelSerializer):
         # Asigna automáticamente el usuario actual como creador
         validated_data['creado_por'] = self.context['request'].user
         return super().create(validated_data)
+
+class UserManagementSerializer(serializers.ModelSerializer):
+    tipo_usuario = serializers.SerializerMethodField()
+    fecha_ingreso = serializers.SerializerMethodField()
+    nombre_completo = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = [
+            'id', 'tipo_usuario', 'nombre_completo',
+            'fecha_ingreso', 'email', 'rut', 'phone'
+        ]
+
+    def get_tipo_usuario(self, obj):
+        return "Administrador" if obj.is_staff else "Cliente"
+
+    def get_nombre_completo(self, obj):
+        names = [obj.first_name, obj.last_name, obj.second_last_name]
+        return " ".join(filter(None, names)) or "Sin nombre"
+
+    def get_fecha_ingreso(self, obj):
+        return localtime(obj.date_joined).strftime("%d/%m/%Y %H:%M")
+
