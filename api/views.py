@@ -102,7 +102,11 @@ def mis_productos(request):
     serializer = ProductoSerializer(productos, many=True)
     return Response(serializer.data)
 
-
+@api_view(['GET'])
+def prod(request):
+    queryset = Producto.objects.all()
+    serializer_class = ProductoSerializer(queryset, many=True, context={'request': request})
+    return Response(serializer_class.data)
 
 @api_view(['GET'])
 def hello_world(request):
