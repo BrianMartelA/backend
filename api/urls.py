@@ -14,5 +14,6 @@ urlpatterns = [
     path('productos/mis-productos/', mis_productos, name='mis_productos'),
     path('', include(router.urls)),
     path('auth/login/', LoginView.as_view(), name='login'),
-    path('productos/all/',prod,name='productos')
+    path('productos/all/',prod,name='productos'),
+    path('users/<int:pk>/toggle-admin/', toggle_admin_status, name='toggle-admin')
 ]

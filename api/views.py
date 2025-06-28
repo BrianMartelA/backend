@@ -135,3 +135,42 @@ def delete_user(request, pk):
             status=status.HTTP_404_NOT_FOUND
         )
 
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated, IsAdminUser])
+def toggle_admin_status(request, pk):
+    try:
+        user = User.objects.get(pk=pk)
+    except User.DoesNotExist:
+        return Response(
+            {"error": "Usuario no encontrado"},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    
+    # No permitir modificar superusuarios
+    if user.is_superuser:
+        return Response(
+            {"error": "No se puede modificar un superusuario"},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    
+    # No permitir que un admin se quite sus propios permisos
+    if user.id == request.user.id:
+        return Response(
+            {"error": "No puedes cambiar tu propio estado de administrador"},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    
+    try:
+        # Cambiar el estado de is_staff
+        user.is_staff = not user.is_staff
+        user.save()
+        
+        return Response(
+            {"message": f"Usuario {'ahora es administrador' if user.is_staff else 'ya no es administrador'}"},
+            status=status.HTTP_200_OK
+        )
+    except Exception as e:
+        return Response(
+            {"error": str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
