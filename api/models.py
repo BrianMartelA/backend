@@ -10,7 +10,8 @@ class User(AbstractUser):
     
     email = models.EmailField(unique=True)
     
-    REQUIRED_FIELDS = ['email', 'rut']
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['username', 'rut']
     def __str__(self):
         return self.email
 
