@@ -18,6 +18,8 @@ from .permissions import IsAdminUser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authtoken.serializers import AuthTokenSerializer 
 from .permissions import IsAdminUser as IsAdminUserCustom 
+from rest_framework.pagination import PageNumberPagination
+from django.db.models import Q
 
 #Cristian toco esto
 from .models import Producto
@@ -42,27 +44,6 @@ class RegisterView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 #Cristian toco esto
-
-class LoginView(ObtainAuthToken):
-    def post(self, request, *args, **kwargs):
-        serializer = self.serializer_class(
-            data=request.data,
-            context={'request': request}
-        )
-        serializer.is_valid(raise_exception=True)
-        user = serializer.validated_data['user']
-        token, created = Token.objects.get_or_create(user=user)
-        
-        return Response({
-            'token': token.key,
-            'user': {
-                'id': user.id,
-                'email': user.email,
-                'first_name': user.first_name,
-                'last_name': user.last_name,
-                'is_staff': user.is_staff  # Añade esta línea
-            }
-        })
 
 class ProductoViewSet(viewsets.ModelViewSet):
     queryset = Producto.objects.all()
@@ -94,9 +75,16 @@ class LoginView(ObtainAuthToken):
                 'is_staff': user.is_staff  # Añade esta propiedad
             }
         })
+    
+class UserPagination(PageNumberPagination):
+    page_size = 6  # Cambiado a 6 usuarios por página
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
+
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated, IsAdminUserCustom])
 def mis_productos(request):
     productos = Producto.objects.filter(creado_por=request.user)
     serializer = ProductoSerializer(productos, many=True)
@@ -113,11 +101,26 @@ def hello_world(request):
     return Response({"message": "Hola desde Django!"})
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated, IsAdminUser])  # Solo admins pueden listar usuarios
+@permission_classes([IsAuthenticated, IsAdminUser])
 def user_list(request):
+    search_query = request.query_params.get('search', '')
+    
     users = User.objects.all().order_by('-date_joined')
-    serializer = UserManagementSerializer(users, many=True)
-    return Response(serializer.data)
+    
+    if search_query:
+        users = users.filter(
+            Q(email__icontains=search_query) |
+            Q(first_name__icontains=search_query) |
+            Q(last_name__icontains=search_query) |
+            Q(rut__icontains=search_query) |
+            Q(phone__icontains=search_query)
+        )
+    
+    paginator = UserPagination()
+    paginated_users = paginator.paginate_queryset(users, request)
+    
+    serializer = UserManagementSerializer(paginated_users, many=True)
+    return paginator.get_paginated_response(serializer.data)
 
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated, IsAdminUserCustom])
