@@ -20,6 +20,9 @@ from rest_framework.authtoken.serializers import AuthTokenSerializer
 from .permissions import IsAdminUser as IsAdminUserCustom 
 from rest_framework.pagination import PageNumberPagination
 from django.db.models import Q
+from rest_framework.pagination import PageNumberPagination
+from rest_framework import filters
+from django_filters.rest_framework import DjangoFilterBackend
 
 #Cristian toco esto
 from .models import Producto
@@ -43,11 +46,26 @@ class RegisterView(APIView):
         print(serializer.errors)  # 👈 Esto muestra los errores en la consola
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-#Cristian toco esto
+#Alvaro toco esto
+
+class ProductPagination(PageNumberPagination):
+    page_size = 6
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
+@api_view(['GET'])
+def all_products(request):
+    productos = Producto.objects.all()
+    # Pasar el contexto de la solicitud al serializador
+    serializer = ProductoSerializer(productos, many=True, context={'request': request})
+    return Response(serializer.data)
 
 class ProductoViewSet(viewsets.ModelViewSet):
     queryset = Producto.objects.all()
     serializer_class = ProductoSerializer
+    pagination_class = ProductPagination
+    filter_backends = [filters.SearchFilter, DjangoFilterBackend]
+    search_fields = ['nombre', 'categoria', 'descripcion']
     
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:
@@ -56,6 +74,9 @@ class ProductoViewSet(viewsets.ModelViewSet):
     
     def perform_create(self, serializer):
         serializer.save(creado_por=self.request.user)
+
+
+
 
 class LoginView(ObtainAuthToken):
     serializer_class = CustomAuthTokenSerializer
@@ -84,17 +105,19 @@ class UserPagination(PageNumberPagination):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated, IsAdminUserCustom])
+@permission_classes([IsAuthenticated])
 def mis_productos(request):
     productos = Producto.objects.filter(creado_por=request.user)
-    serializer = ProductoSerializer(productos, many=True)
+    # Pasar el contexto de la solicitud al serializador
+    serializer = ProductoSerializer(productos, many=True, context={'request': request})
     return Response(serializer.data)
 
 @api_view(['GET'])
 def prod(request):
     queryset = Producto.objects.all()
-    serializer_class = ProductoSerializer(queryset, many=True, context={'request': request})
-    return Response(serializer_class.data)
+    # Pasar el contexto de la solicitud al serializador
+    serializer = ProductoSerializer(queryset, many=True, context={'request': request})
+    return Response(serializer.data)
 
 @api_view(['GET'])
 def hello_world(request):
