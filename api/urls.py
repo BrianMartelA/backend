@@ -13,4 +13,6 @@ urlpatterns = [
     path('users/<int:pk>/', delete_user, name='delete-user'),
     path('productos/mis-productos/', mis_productos, name='mis_productos'),
     path('', include(router.urls)),
+    path('auth/login/', LoginView.as_view(), name='login'),
+    path('productos/all/',prod,name='productos')
 ]

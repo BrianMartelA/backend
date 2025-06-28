@@ -11,10 +11,25 @@ from .serializers import UserManagementSerializer
 from rest_framework.permissions import IsAdminUser
 from rest_framework.decorators import api_view, permission_classes
 from api.models import User
+from rest_framework.authtoken.models import Token
+from .models import User
+from rest_framework.authtoken.views import ObtainAuthToken
+from .permissions import IsAdminUser
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.authtoken.serializers import AuthTokenSerializer 
+from .permissions import IsAdminUser as IsAdminUserCustom 
 
 #Cristian toco esto
 from .models import Producto
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
+
+class CustomAuthTokenSerializer(AuthTokenSerializer):
+    def validate(self, attrs):
+        # Permitir login con email como username
+        email = attrs.get('email')
+        if email:
+            attrs['username'] = email
+        return super().validate(attrs)
 
 class RegisterView(APIView):
     def post(self, request):
@@ -26,12 +41,29 @@ class RegisterView(APIView):
         print(serializer.errors)  # 👈 Esto muestra los errores en la consola
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-@api_view(['GET'])
-def hello_world(request):
-    return Response({"message": "Hola desde Django!"})
-
-
 #Cristian toco esto
+
+class LoginView(ObtainAuthToken):
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(
+            data=request.data,
+            context={'request': request}
+        )
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data['user']
+        token, created = Token.objects.get_or_create(user=user)
+        
+        return Response({
+            'token': token.key,
+            'user': {
+                'id': user.id,
+                'email': user.email,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'is_staff': user.is_staff  # Añade esta línea
+            }
+        })
+
 class ProductoViewSet(viewsets.ModelViewSet):
     queryset = Producto.objects.all()
     serializer_class = ProductoSerializer
@@ -44,6 +76,25 @@ class ProductoViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(creado_por=self.request.user)
 
+class LoginView(ObtainAuthToken):
+    serializer_class = CustomAuthTokenSerializer
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data['user']
+        token, created = Token.objects.get_or_create(user=user)
+        
+        return Response({
+            'token': token.key,
+            'user': {
+                'id': user.id,
+                'email': user.email,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'is_staff': user.is_staff  # Añade esta propiedad
+            }
+        })
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def mis_productos(request):
@@ -51,16 +102,25 @@ def mis_productos(request):
     serializer = ProductoSerializer(productos, many=True)
     return Response(serializer.data)
 
+@api_view(['GET'])
+def prod(request):
+    queryset = Producto.objects.all()
+    serializer_class = ProductoSerializer(queryset, many=True, context={'request': request})
+    return Response(serializer_class.data)
 
 @api_view(['GET'])
-#@permission_classes([IsAdminUser])
+def hello_world(request):
+    return Response({"message": "Hola desde Django!"})
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated, IsAdminUser])  # Solo admins pueden listar usuarios
 def user_list(request):
     users = User.objects.all().order_by('-date_joined')
     serializer = UserManagementSerializer(users, many=True)
     return Response(serializer.data)
 
 @api_view(['DELETE'])
-#@permission_classes([IsAdminUser])
+@permission_classes([IsAuthenticated, IsAdminUserCustom])
 def delete_user(request, pk):
     try:
         user = User.objects.get(pk=pk)
