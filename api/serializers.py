@@ -1,4 +1,6 @@
 from rest_framework import serializers
+from rest_framework import serializers
+from rest_framework.authtoken.serializers import AuthTokenSerializer
 
 from .models import User , Producto  # o tu modelo personalizado
 from django.utils.timezone import localtime
@@ -18,47 +20,66 @@ class RegisterSerializer(serializers.ModelSerializer):
         ]
         extra_kwargs = {"password": {"write_only": True}}
 
-    def validate(self, data):
-        if data["password"] != data["conf_pass"]:
-            raise serializers.ValidationError("Las contraseñas no coinciden")
-        return data
+    def validate_first_name(self, value):
+        if not value or not value.strip():
+            raise serializers.ValidationError("El nombre es obligatorio.")
+        if not re.match(r'^[A-Za-záéíóúÁÉÍÓÚñÑ\s]+$', value):
+            raise serializers.ValidationError("El nombre solo puede contener letras y espacios.")
+        return value.strip()
+
+    def validate_last_name(self, value):
+        if not value or not value.strip():
+            raise serializers.ValidationError("El apellido paterno es obligatorio.")
+        if not re.match(r'^[A-Za-záéíóúÁÉÍÓÚñÑ\s]+$', value):
+            raise serializers.ValidationError("El apellido paterno solo puede contener letras y espacios.")
+        return value.strip()
+
+    def validate_second_last_name(self, value):
+        if not value or not value.strip():
+            raise serializers.ValidationError("El apellido materno es obligatorio.")
+        if not re.match(r'^[A-Za-záéíóúÁÉÍÓÚñÑ\s]+$', value):
+            raise serializers.ValidationError("El apellido materno solo puede contener letras y espacios.")
+        return value.strip()
+
+    def validate_email(self, value):
+        if not value or not value.strip():
+            raise serializers.ValidationError("El email es obligatorio.")
+        
+        # Verificar si el email ya existe
+        if User.objects.filter(email=value.strip()).exists():
+            raise serializers.ValidationError("Este email ya está registrado.")
+        
+        domain = value.split('@')[-1]
+        if domain not in ALLOWED_DOMAINS:
+            raise serializers.ValidationError("Solo se permiten correos de Gmail, Duoc o Yahoo.")
+        return value.strip()
 
     def validate_rut(self, value):
+        if not value or not value.strip():
+            raise serializers.ValidationError("El RUT es obligatorio.")
         # Chilean RUT validation (basic)
         if not re.match(r'^\d{7,8}-[kK\d]$', value):
             raise serializers.ValidationError("El RUT debe tener el formato 12345678-9 o 12345678-K.")
         if User.objects.filter(rut=value).exists():
             raise serializers.ValidationError("Este RUT ya está registrado.")
-        return value
+        return value.strip()
 
     def validate_phone(self, value):
+        if not value or not value.strip():
+            raise serializers.ValidationError("El teléfono es obligatorio.")
         # Only digits, length between 9 and 12
         if not re.match(r'^\d{9,12}$', value):
             raise serializers.ValidationError("El teléfono debe contener solo números y tener entre 9 y 12 dígitos.")
-        return value
+        return value.strip()
 
-    def validate_first_name(self, value):
-        if not re.match(r'^[A-Za-záéíóúÁÉÍÓÚñÑ\s]+$', value):
-            raise serializers.ValidationError("El nombre solo puede contener letras y espacios.")
-        return value
+    def validate_address(self, value):
+        if not value or not value.strip():
+            raise serializers.ValidationError("La dirección es obligatoria.")
+        return value.strip()
 
-    def validate_last_name(self, value):
-        if not re.match(r'^[A-Za-záéíóúÁÉÍÓÚñÑ\s]+$', value):
-            raise serializers.ValidationError("El apellido paterno solo puede contener letras y espacios.")
-        return value
-
-    def validate_second_last_name(self, value):
-        if not re.match(r'^[A-Za-záéíóúÁÉÍÓÚñÑ\s]+$', value):
-            raise serializers.ValidationError("El apellido materno solo puede contener letras y espacios.")
-        return value
-
-
-    def validate_email(self, value):
-            domain = value.split('@')[-1]
-            if domain not in ALLOWED_DOMAINS:
-                raise serializers.ValidationError("Solo se permiten correos de Gmail, Duoc o Yahoo.")
-            return value
     def validate_password(self, value):
+        if not value or not value.strip():
+            raise serializers.ValidationError("La contraseña es obligatoria.")
         if len(value) < 8:
             raise serializers.ValidationError("La contraseña debe tener al menos 8 caracteres.")
         if not re.search(r'[A-Z]', value):
@@ -67,6 +88,11 @@ class RegisterSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Debe incluir al menos un número.")
         if not re.search(r'[\W_]', value):
             raise serializers.ValidationError("Debe incluir al menos un símbolo (como @, #, !).")
+        return value
+
+    def validate_conf_pass(self, value):
+        if not value or not value.strip():
+            raise serializers.ValidationError("La confirmación de contraseña es obligatoria.")
         return value
 
     def create(self, validated_data):
@@ -115,3 +141,5 @@ class UserManagementSerializer(serializers.ModelSerializer):
     def get_fecha_ingreso(self, obj):
         return localtime(obj.date_joined).strftime("%d/%m/%Y %H:%M")
 
+    class EmailAuthTokenSerializer(AuthTokenSerializer):
+        username = serializers.EmailField(label="Email")

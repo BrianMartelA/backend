@@ -7,6 +7,13 @@ class User(AbstractUser):
     phone = models.CharField(max_length=20)
     address = models.CharField(max_length=255)
     second_last_name = models.CharField(max_length=150, blank=True)
+    
+    email = models.EmailField(unique=True)
+    
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['username', 'rut']
+    def __str__(self):
+        return self.email
 
 #Cristian creo esta clase
 class Producto(models.Model):
