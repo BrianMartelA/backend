@@ -34,3 +34,23 @@ class Producto(models.Model):
 
     def __str__(self):
         return self.nombre
+    
+class Carrito(models.Model):
+    usuario = models.ForeignKey(User, on_delete=models.CASCADE, related_name='carritos')
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    activo = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"Carrito de {self.usuario.email}"
+
+class ItemCarrito(models.Model):
+    carrito = models.ForeignKey(Carrito, on_delete=models.CASCADE, related_name='items')
+    producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
+    cantidad = models.PositiveIntegerField(default=1)
+    fecha_agregado = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('carrito', 'producto')  # Evita duplicados
+
+    def __str__(self):
+        return f"{self.cantidad} x {self.producto.nombre}"

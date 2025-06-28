@@ -7,12 +7,12 @@ from rest_framework import status, viewsets
 from .serializers import RegisterSerializer, ProductoSerializer
 from rest_framework.decorators import api_view, permission_classes
 from django.contrib.auth import authenticate
-from .serializers import UserManagementSerializer
+from .serializers import UserManagementSerializer, CarritoSerializer, ItemCarritoSerializer
 from rest_framework.permissions import IsAdminUser
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, action
 from api.models import User
 from rest_framework.authtoken.models import Token
-from .models import User
+from .models import User, Carrito, ItemCarrito
 from rest_framework.authtoken.views import ObtainAuthToken
 from .permissions import IsAdminUser
 from rest_framework.permissions import IsAuthenticated
@@ -132,3 +132,45 @@ def delete_user(request, pk):
             status=status.HTTP_404_NOT_FOUND
         )
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def obtener_carrito(request):
+    carrito, created = Carrito.objects.get_or_create(usuario=request.user, activo=True)
+    serializer = CarritoSerializer(carrito)
+    return Response(serializer.data)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def agregar_item_carrito(request):
+    producto_id = request.data.get('producto_id')
+    cantidad = request.data.get('cantidad', 1)
+    
+    try:
+        producto = Producto.objects.get(pk=producto_id)
+    except Producto.DoesNotExist:
+        return Response({'error': 'Producto no encontrado'}, status=status.HTTP_404_NOT_FOUND)
+    
+    carrito, created = Carrito.objects.get_or_create(usuario=request.user, activo=True)
+    
+    item, item_created = ItemCarrito.objects.get_or_create(
+        carrito=carrito,
+        producto=producto,
+        defaults={'cantidad': cantidad}
+    )
+    
+    if not item_created:
+        item.cantidad += int(cantidad)
+        item.save()
+    
+    serializer = ItemCarritoSerializer(item)
+    return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def eliminar_item_carrito(request, item_id):
+    try:
+        item = ItemCarrito.objects.get(pk=item_id, carrito__usuario=request.user)
+        item.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    except ItemCarrito.DoesNotExist:
+        return Response({'error': 'Item no encontrado'}, status=status.HTTP_404_NOT_FOUND)

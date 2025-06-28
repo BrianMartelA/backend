@@ -1,7 +1,7 @@
 
 from django.urls import path, include
-from .views import * #Cristian toco esto
-from rest_framework.routers import DefaultRouter #Cristian toco esto
+from .views import * 
+from rest_framework.routers import DefaultRouter 
 
 router = DefaultRouter()
 router.register(r'productos', ProductoViewSet)
@@ -14,5 +14,9 @@ urlpatterns = [
     path('productos/mis-productos/', mis_productos, name='mis_productos'),
     path('', include(router.urls)),
     path('auth/login/', LoginView.as_view(), name='login'),
-    path('productos/all/',prod,name='productos')
+    path('productos/all/',prod,name='productos'),
+    
+    path('carrito/', obtener_carrito, name='obtener_carrito'),
+    path('carrito/agregar/', agregar_item_carrito, name='agregar_item_carrito'),
+    path('carrito/eliminar/<int:item_id>/', eliminar_item_carrito, name='eliminar_item_carrito'),
 ]

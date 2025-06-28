@@ -1,8 +1,7 @@
 from rest_framework import serializers
-from rest_framework import serializers
 from rest_framework.authtoken.serializers import AuthTokenSerializer
 
-from .models import User , Producto  # o tu modelo personalizado
+from .models import User, Producto, Carrito, ItemCarrito
 from django.utils.timezone import localtime
 import re
 
@@ -143,3 +142,21 @@ class UserManagementSerializer(serializers.ModelSerializer):
 
     class EmailAuthTokenSerializer(AuthTokenSerializer):
         username = serializers.EmailField(label="Email")
+
+class ItemCarritoSerializer(serializers.ModelSerializer):
+    producto = ProductoSerializer(read_only=True)
+
+    class Meta:
+        model = ItemCarrito
+        fields = ['id', 'producto', 'cantidad', 'fecha_agregado']
+
+class CarritoSerializer(serializers.ModelSerializer):
+    items = ItemCarritoSerializer(many=True, read_only=True)
+    total = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Carrito
+        fields = ['id', 'usuario', 'fecha_creacion', 'activo', 'items', 'total']
+
+    def get_total(self, obj):
+        return sum(item.producto.precio * item.cantidad for item in obj.items.all())
