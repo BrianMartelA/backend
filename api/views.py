@@ -1,4 +1,3 @@
-import paypalrestsdk
 from django.conf import settings
 from django.shortcuts import render
 from django.contrib.auth import authenticate
@@ -52,49 +51,6 @@ class ProductPagination(PageNumberPagination):
     page_size = 6
     page_size_query_param = 'page_size'
     max_page_size = 100
-    
-# Asegurar que la vista CreatePayPalPayment tenga los permisos correctos:
-class CreatePayPalPayment(APIView):
-    permission_classes = [IsAuthenticated]  # Verificar que esté presente
-
-    def post(self, request):
-        try:
-            paypalrestsdk.configure({
-                "mode": settings.PAYPAL_MODE,
-                "client_id": settings.PAYPAL_CLIENT_ID,
-                "client_secret": settings.PAYPAL_CLIENT_SECRET
-            })
-            
-            # Calcular monto desde el carrito (CLP)
-            carrito = Carrito.objects.get(usuario=request.user, activo=True)
-            total_clp = sum(item.producto.precio * item.cantidad for item in carrito.items.all())
-            
-            # Convertir CLP a USD (tipo de cambio aproximado)
-            total_usd = round(total_clp / 800, 2)  # 1 USD ≈ 800 CLP
-            
-            payment = paypalrestsdk.Payment({
-                "intent": "sale",
-                "payer": {"payment_method": "paypal"},
-                "transactions": [{
-                    "amount": {
-                        "total": str(total_usd),
-                        "currency": "USD"
-                    },
-                    "description": "Compra en Ferretería Online"
-                }],
-                "redirect_urls": {
-                    "return_url": "http://localhost:4200/payment/success",
-                    "cancel_url": "http://localhost:4200/payment/cancel"
-                }
-            })
-
-            if payment.create():
-                return Response({"approval_url": payment.links[1].href})
-            else:
-                return Response({"error": payment.error}, status=status.HTTP_400_BAD_REQUEST)
-                
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['GET'])
 def all_products(request):
