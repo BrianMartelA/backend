@@ -1,8 +1,7 @@
 from rest_framework import serializers
-from rest_framework import serializers
 from rest_framework.authtoken.serializers import AuthTokenSerializer
 
-from .models import User , Producto  # o tu modelo personalizado
+from .models import User, Producto, Carrito, ItemCarrito
 from django.utils.timezone import localtime
 import re
 
@@ -107,11 +106,10 @@ class RegisterSerializer(serializers.ModelSerializer):
 
 #Alvaro toco esto
 class ProductoSerializer(serializers.ModelSerializer):
-    imagen = serializers.SerializerMethodField()  # Cambiamos a SerializerMethodField
-    
+    imagen_url = serializers.SerializerMethodField()
     class Meta:
         model = Producto
-        fields = ['id', 'nombre', 'categoria', 'stock', 'imagen', 'precio', 'creado_por', 'fecha_creacion']
+        fields = ['id', 'nombre', 'categoria', 'stock', 'imagen_url', 'precio', 'creado_por', 'fecha_creacion']
         extra_kwargs = {
             'creado_por': {'read_only': True}
         }
@@ -126,6 +124,15 @@ class ProductoSerializer(serializers.ModelSerializer):
         # Asigna automáticamente el usuario actual como creador
         validated_data['creado_por'] = self.context['request'].user
         return super().create(validated_data)
+    
+    def get_imagen_url(self, obj):
+        if obj.imagen:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.imagen.url)
+            # Fallback si no hay request (por ejemplo, en consola)
+            return f"http://localhost:8000{obj.imagen.url}"
+        return None
 
 class UserManagementSerializer(serializers.ModelSerializer):
     tipo_usuario = serializers.SerializerMethodField()
@@ -148,4 +155,24 @@ class UserManagementSerializer(serializers.ModelSerializer):
 
     def get_fecha_ingreso(self, obj):
         return localtime(obj.date_joined).strftime("%d/%m/%Y %H:%M")
-    
+
+    class EmailAuthTokenSerializer(AuthTokenSerializer):
+        username = serializers.EmailField(label="Email")
+
+class ItemCarritoSerializer(serializers.ModelSerializer):
+    producto = ProductoSerializer(read_only=True)
+
+    class Meta:
+        model = ItemCarrito
+        fields = ['id', 'producto', 'cantidad', 'fecha_agregado']
+
+class CarritoSerializer(serializers.ModelSerializer):
+    items = ItemCarritoSerializer(many=True, read_only=True)
+    total = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Carrito
+        fields = ['id', 'usuario', 'fecha_creacion', 'activo', 'items', 'total']
+
+    def get_total(self, obj):
+        return sum(item.producto.precio * item.cantidad for item in obj.items.all())
