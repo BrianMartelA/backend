@@ -1,9 +1,26 @@
 from django.conf.urls.static import static
 from django.urls import path, include
-from .views import * 
 
 from rest_framework.routers import DefaultRouter 
 from django.conf import settings
+#from .views import * 
+from .views import (  # Cambia a importación explícita
+    hello_world,
+    RegisterView,
+    user_list,
+    delete_user,
+    toggle_admin_status,
+    mis_productos,
+    all_products,
+    LoginView,
+    obtener_carrito,
+    agregar_item_carrito,
+    eliminar_item_carrito,
+    buscar_productos,
+    productos_paginados,
+    productos_por_categoria,  # 👈 Añade esto explícitamente
+    ProductoViewSet
+)
 
 
 router = DefaultRouter()
@@ -25,6 +42,8 @@ urlpatterns = [
     path('carrito/agregar/', agregar_item_carrito, name='agregar_item_carrito'),
     path('carrito/eliminar/<int:item_id>/', eliminar_item_carrito, name='eliminar_item_carrito'),
     path('productos/search/', buscar_productos, name='search-products'),
+    path('productos/paginados/', productos_paginados, name='productos-paginados'),
+    path('productos/por-categoria/', productos_por_categoria, name='productos-por-categoria'),
     path('', include(router.urls)),  # Esto debe ir AL FINAL
 ]
 

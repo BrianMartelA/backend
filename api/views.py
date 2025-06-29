@@ -1,28 +1,28 @@
 from django.shortcuts import render
+from django.contrib.auth import authenticate
+from django.db.models import Q
+from django_filters.rest_framework import DjangoFilterBackend
 
-# Create your views here.
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, viewsets
-from .serializers import RegisterSerializer, ProductoSerializer
-from rest_framework.decorators import api_view, permission_classes
-from django.contrib.auth import authenticate
-from .serializers import UserManagementSerializer, CarritoSerializer, ItemCarritoSerializer
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAdminUser
 from rest_framework.decorators import api_view, permission_classes, action
-from api.models import User
 from rest_framework.authtoken.models import Token
-from .models import User, Carrito, ItemCarrito
 from rest_framework.authtoken.views import ObtainAuthToken
-from .permissions import IsAdminUser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authtoken.serializers import AuthTokenSerializer 
-from .permissions import IsAdminUser as IsAdminUserCustom 
 from rest_framework.pagination import PageNumberPagination
-from django.db.models import Q
 from rest_framework.pagination import PageNumberPagination
 from rest_framework import filters
-from django_filters.rest_framework import DjangoFilterBackend
+
+from api.models import User
+from .models import User, Carrito, ItemCarrito
+from .permissions import IsAdminUser
+from .permissions import IsAdminUser as IsAdminUserCustom 
+from .serializers import RegisterSerializer, ProductoSerializer
+from .serializers import UserManagementSerializer, CarritoSerializer, ItemCarritoSerializer
 
 #Cristian toco esto
 from .models import Producto
@@ -254,7 +254,9 @@ def toggle_admin_status(request, pk):
 @api_view(['GET'])
 def buscar_productos(request):
     termino = request.query_params.get('q', '').strip()
-    
+    page = request.query_params.get('page', 1)
+    page_size = request.query_params.get('page_size', 9)  # 9 productos por página
+
     if not termino:
         return Response({"error": "Término de búsqueda requerido"}, status=400)
     
@@ -263,11 +265,56 @@ def buscar_productos(request):
         Q(nombre__icontains=termino) |
         Q(descripcion__icontains=termino) |
         Q(categoria__icontains=termino)
-    )
+    ).order_by('id')  # Ordenar para consistencia en paginación
+
+    paginator = PageNumberPagination()
+    paginator.page_size = page_size
+    result_page = paginator.paginate_queryset(productos, request)
     
     serializer = ProductoSerializer(
-        productos, 
+        result_page, 
         many=True,
         context={'request': request}
     )
-    return Response(serializer.data)
+    return paginator.get_paginated_response(serializer.data)
+
+@api_view(['GET'])
+def productos_paginados(request):
+    page = request.query_params.get('page', 1)
+    page_size = request.query_params.get('page_size', 9)
+    
+    productos = Producto.objects.all().order_by('id')
+    
+    paginator = PageNumberPagination()
+    paginator.page_size = page_size
+    result_page = paginator.paginate_queryset(productos, request)
+    
+    serializer = ProductoSerializer(
+        result_page, 
+        many=True,
+        context={'request': request}
+    )
+    return paginator.get_paginated_response(serializer.data)
+
+@api_view(['GET'])
+def productos_por_categoria(request):
+    categoria = request.query_params.get('categoria', '')
+    page = request.query_params.get('page', 1)
+    page_size = request.query_params.get('page_size', 9)
+    
+    if not categoria:
+        return Response({"error": "Categoría requerida"}, status=400)
+    
+    # Filtrar por categoría exacta (no icontains)
+    productos = Producto.objects.filter(categoria=categoria).order_by('id')
+    
+    paginator = PageNumberPagination()
+    paginator.page_size = page_size
+    result_page = paginator.paginate_queryset(productos, request)
+    
+    serializer = ProductoSerializer(
+        result_page, 
+        many=True,
+        context={'request': request}
+    )
+    return paginator.get_paginated_response(serializer.data)
