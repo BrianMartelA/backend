@@ -251,3 +251,23 @@ def toggle_admin_status(request, pk):
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
+@api_view(['GET'])
+def buscar_productos(request):
+    termino = request.query_params.get('q', '').strip()
+    
+    if not termino:
+        return Response({"error": "Término de búsqueda requerido"}, status=400)
+    
+    # Buscar en nombre, descripción y categoría
+    productos = Producto.objects.filter(
+        Q(nombre__icontains=termino) |
+        Q(descripcion__icontains=termino) |
+        Q(categoria__icontains=termino)
+    )
+    
+    serializer = ProductoSerializer(
+        productos, 
+        many=True,
+        context={'request': request}
+    )
+    return Response(serializer.data)

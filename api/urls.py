@@ -24,6 +24,7 @@ urlpatterns = [
     path('carrito/', obtener_carrito, name='obtener_carrito'),
     path('carrito/agregar/', agregar_item_carrito, name='agregar_item_carrito'),
     path('carrito/eliminar/<int:item_id>/', eliminar_item_carrito, name='eliminar_item_carrito'),
+    path('productos/search/', buscar_productos, name='search-products'),
     path('', include(router.urls)),  # Esto debe ir AL FINAL
 ]
 
