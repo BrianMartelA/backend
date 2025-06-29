@@ -104,7 +104,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         return user
 
 
-#Cristian toco esto
+#Alvaro toco esto
 class ProductoSerializer(serializers.ModelSerializer):
     imagen_url = serializers.SerializerMethodField()
     class Meta:
@@ -113,6 +113,12 @@ class ProductoSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'creado_por': {'read_only': True}
         }
+    
+    def get_imagen(self, obj):
+        request = self.context.get('request')
+        if obj.imagen:
+            return request.build_absolute_uri(obj.imagen.url) if request else obj.imagen.url
+        return None
     
     def create(self, validated_data):
         # Asigna automáticamente el usuario actual como creador

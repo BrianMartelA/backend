@@ -29,6 +29,7 @@ class Producto(models.Model):
     stock = models.PositiveIntegerField()
     imagen = models.ImageField(upload_to='productos/')
     precio = models.IntegerField()
+    descripcion = models.CharField(max_length=150, null=True, blank=True)
     creado_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='productos_creados')
     fecha_creacion = models.DateTimeField(auto_now_add=True)
 
@@ -40,6 +41,10 @@ class Producto(models.Model):
 
     def __str__(self):
         return self.nombre
+      
+    @property
+    def descripcion_o_espacio(self):
+        return self.descripcion if self.descripcion else "---"
     
 class Carrito(models.Model):
     usuario = models.ForeignKey(User, on_delete=models.CASCADE, related_name='carritos')
