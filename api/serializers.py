@@ -160,7 +160,7 @@ class UserManagementSerializer(serializers.ModelSerializer):
     def get_fecha_ingreso(self, obj):
         return localtime(obj.date_joined).strftime("%d/%m/%Y %H:%M")
 
-    class EmailAuthTokenSerializer(AuthTokenSerializer):
+class EmailAuthTokenSerializer(AuthTokenSerializer):
         username = serializers.EmailField(label="Email")
 
 class ItemCarritoSerializer(serializers.ModelSerializer):
@@ -180,3 +180,50 @@ class CarritoSerializer(serializers.ModelSerializer):
 
     def get_total(self, obj):
         return sum(item.producto.precio * item.cantidad for item in obj.items.all())
+
+class UserUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = [
+            "first_name", "last_name", "second_last_name",
+            "email", "phone", "address"
+        ]
+        extra_kwargs = {
+            "rut": {"read_only": True},
+            "email": {"required": False}
+        }
+    
+    def validate_email(self, value):
+        # Validar que el email no esté en uso
+        if User.objects.exclude(pk=self.instance.pk).filter(email=value).exists():
+            raise serializers.ValidationError("Este email ya está registrado.")
+        return value
+    
+    def update(self, instance, validated_data):
+        # Actualizar username junto con email
+        if 'email' in validated_data:
+            validated_data['username'] = validated_data['email']
+        return super().update(instance, validated_data)
+    
+    def validate_phone(self, value):
+        if not re.match(r'^\d{9,12}$', value):
+            raise serializers.ValidationError("El teléfono debe contener solo números y tener entre 9 y 12 dígitos.")
+        return value
+
+class PasswordChangeSerializer(serializers.Serializer):
+    old_password = serializers.CharField(required=True)
+    new_password = serializers.CharField(required=True)
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    nombre_completo = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = User
+        fields = [
+            'id', 'first_name', 'last_name', 'second_last_name',
+            'rut', 'email', 'phone', 'address', 'nombre_completo'
+        ]
+    
+    def get_nombre_completo(self, obj):
+        names = [obj.first_name, obj.last_name, obj.second_last_name]
+        return " ".join(filter(None, names)) or "Sin nombre"

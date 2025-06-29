@@ -41,9 +41,14 @@ urlpatterns = [
     path('carrito/', obtener_carrito, name='obtener_carrito'),
     path('carrito/agregar/', agregar_item_carrito, name='agregar_item_carrito'),
     path('carrito/eliminar/<int:item_id>/', eliminar_item_carrito, name='eliminar_item_carrito'),
+
     path('productos/search/', buscar_productos, name='search-products'),
     path('productos/paginados/', productos_paginados, name='productos-paginados'),
     path('productos/por-categoria/', productos_por_categoria, name='productos-por-categoria'),
+
+    path('user/me/', CurrentUserView.as_view(), name='current-user'),
+    path('user/change_password/', change_password, name='change-password'),
+
     path('', include(router.urls)),  # Esto debe ir AL FINAL
 ]
 
