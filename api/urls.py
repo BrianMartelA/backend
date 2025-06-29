@@ -19,7 +19,8 @@ from .views import (  # Cambia a importación explícita
     buscar_productos,
     productos_paginados,
     productos_por_categoria,  # 👈 Añade esto explícitamente
-    ProductoViewSet
+    ProductoViewSet,
+    CreatePayPalPayment
 )
 
 
@@ -44,6 +45,7 @@ urlpatterns = [
     path('productos/search/', buscar_productos, name='search-products'),
     path('productos/paginados/', productos_paginados, name='productos-paginados'),
     path('productos/por-categoria/', productos_por_categoria, name='productos-por-categoria'),
+    path('create-paypal-payment/', CreatePayPalPayment.as_view(), name='create_paypal_payment'),
     path('', include(router.urls)),  # Esto debe ir AL FINAL
 ]
 

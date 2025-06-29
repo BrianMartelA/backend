@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-bu_yp__oz#1!w$gia)i%dkl1u%elpbc@9(=r1502@ymer40n+s
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
 
 # Application definition
@@ -159,3 +159,10 @@ REST_FRAMEWORK = {
     ]
 }
 
+# Agregar al final
+from dotenv import load_dotenv
+load_dotenv()
+
+PAYPAL_MODE = os.getenv('PAYPAL_MODE')
+PAYPAL_CLIENT_ID = os.getenv('PAYPAL_CLIENT_ID')
+PAYPAL_CLIENT_SECRET = os.getenv('PAYPAL_CLIENT_SECRET')
