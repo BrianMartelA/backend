@@ -4,7 +4,7 @@ from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, viewsets
-from .serializers import RegisterSerializer, ProductoSerializer
+from .serializers import RegisterSerializer, ProductoSerializer, UserProfileSerializer
 from rest_framework.decorators import api_view, permission_classes
 from django.contrib.auth import authenticate
 from .serializers import UserManagementSerializer, CarritoSerializer, ItemCarritoSerializer
@@ -27,6 +27,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 #Cristian toco esto
 from .models import Producto
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from .serializers import UserUpdateSerializer, PasswordChangeSerializer
 
 class CustomAuthTokenSerializer(AuthTokenSerializer):
     def validate(self, attrs):
@@ -107,7 +108,42 @@ class UserPagination(PageNumberPagination):
     page_size_query_param = 'page_size'
     max_page_size = 100
 
+class CurrentUserView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        # Usar el serializador que incluye nombre_completo
+        serializer = UserProfileSerializer(request.user)
+        return Response(serializer.data)
+    
+    def patch(self, request):
+        serializer = UserUpdateSerializer(
+            request.user, 
+            data=request.data, 
+            partial=True
+        )
+        if serializer.is_valid():
+            serializer.save()
+            # Devolver con el serializador que incluye nombre_completo
+            updated_user = User.objects.get(pk=request.user.pk)
+            response_serializer = UserProfileSerializer(updated_user)
+            return Response(response_serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def change_password(request):
+    serializer = PasswordChangeSerializer(data=request.data)
+    if serializer.is_valid():
+        user = request.user
+        if not user.check_password(serializer.validated_data['old_password']):
+            return Response({"old_password": ["Contraseña incorrecta"]}, status=status.HTTP_400_BAD_REQUEST)
+        
+        user.set_password(serializer.validated_data['new_password'])
+        user.save()
+        return Response({"message": "Contraseña actualizada correctamente"})
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
