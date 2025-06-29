@@ -24,6 +24,8 @@ urlpatterns = [
     path('carrito/', obtener_carrito, name='obtener_carrito'),
     path('carrito/agregar/', agregar_item_carrito, name='agregar_item_carrito'),
     path('carrito/eliminar/<int:item_id>/', eliminar_item_carrito, name='eliminar_item_carrito'),
+    path('user/me/', CurrentUserView.as_view(), name='current-user'),
+    path('user/change_password/', change_password, name='change-password'),
     path('', include(router.urls)),  # Esto debe ir AL FINAL
 ]
 
