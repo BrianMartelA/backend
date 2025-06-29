@@ -32,6 +32,12 @@ class Producto(models.Model):
     creado_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='productos_creados')
     fecha_creacion = models.DateTimeField(auto_now_add=True)
 
+    @property
+    def imagen_url(self):
+        if self.imagen:
+            return self.imagen.url
+        return None
+
     def __str__(self):
         return self.nombre
     

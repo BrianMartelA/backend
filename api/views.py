@@ -75,6 +75,10 @@ class ProductoViewSet(viewsets.ModelViewSet):
     
     def perform_create(self, serializer):
         serializer.save(creado_por=self.request.user)
+        
+    def get_serializer_context(self):
+        # Pasa el request al serializador
+        return {'request': self.request}
 
 class LoginView(ObtainAuthToken):
     serializer_class = CustomAuthTokenSerializer
@@ -105,6 +109,11 @@ def mis_productos(request):
 @api_view(['GET'])
 def prod(request):
     queryset = Producto.objects.all()
+    serializer = ProductoSerializer(
+        queryset, 
+        many=True, 
+        context={'request': request}  # Pasa el contexto
+    )
     serializer_class = ProductoSerializer(queryset, many=True, context={'request': request})
     return Response(serializer_class.data)
 

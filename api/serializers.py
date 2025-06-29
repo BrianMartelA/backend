@@ -106,9 +106,10 @@ class RegisterSerializer(serializers.ModelSerializer):
 
 #Cristian toco esto
 class ProductoSerializer(serializers.ModelSerializer):
+    imagen_url = serializers.SerializerMethodField()
     class Meta:
         model = Producto
-        fields = ['id', 'nombre', 'categoria', 'stock', 'imagen', 'precio', 'creado_por', 'fecha_creacion']
+        fields = ['id', 'nombre', 'categoria', 'stock', 'imagen_url', 'precio', 'creado_por', 'fecha_creacion']
         extra_kwargs = {
             'creado_por': {'read_only': True}
         }
@@ -117,6 +118,15 @@ class ProductoSerializer(serializers.ModelSerializer):
         # Asigna automáticamente el usuario actual como creador
         validated_data['creado_por'] = self.context['request'].user
         return super().create(validated_data)
+    
+    def get_imagen_url(self, obj):
+        if obj.imagen:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.imagen.url)
+            # Fallback si no hay request (por ejemplo, en consola)
+            return f"http://localhost:8000{obj.imagen.url}"
+        return None
 
 class UserManagementSerializer(serializers.ModelSerializer):
     tipo_usuario = serializers.SerializerMethodField()
