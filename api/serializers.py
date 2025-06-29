@@ -104,14 +104,19 @@ class RegisterSerializer(serializers.ModelSerializer):
         return user
 
 
-#Alvaro toco esto
+
 class ProductoSerializer(serializers.ModelSerializer):
     imagen_url = serializers.SerializerMethodField()
+    
     class Meta:
         model = Producto
-        fields = ['id', 'nombre', 'categoria', 'stock', 'imagen_url', 'precio', 'creado_por', 'fecha_creacion']
+        fields = ['id', 'nombre', 'categoria', 
+                  'stock', 'imagen', 'imagen_url', 
+                  'precio', 'creado_por', 'fecha_creacion',
+                  'descripcion']
         extra_kwargs = {
-            'creado_por': {'read_only': True}
+            'creado_por': {'read_only': True},
+            'imagen': {'write_only': True}  # Para que no se muestre en las respuestas
         }
     
     def get_imagen(self, obj):
@@ -130,7 +135,6 @@ class ProductoSerializer(serializers.ModelSerializer):
             request = self.context.get('request')
             if request:
                 return request.build_absolute_uri(obj.imagen.url)
-            # Fallback si no hay request (por ejemplo, en consola)
             return f"http://localhost:8000{obj.imagen.url}"
         return None
 

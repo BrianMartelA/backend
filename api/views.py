@@ -76,8 +76,9 @@ class ProductoViewSet(viewsets.ModelViewSet):
         serializer.save(creado_por=self.request.user)
         
     def get_serializer_context(self):
-        # Pasa el request al serializador
-        return {'request': self.request}
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
 
 
 
