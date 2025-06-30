@@ -19,7 +19,9 @@ from .views import (  # Cambia a importación explícita
     buscar_productos,
     productos_paginados,
     productos_por_categoria,  # 👈 Añade esto explícitamente
-    ProductoViewSet
+    ProductoViewSet,
+    CurrentUserView,
+    change_password
 )
 
 
