@@ -29,7 +29,7 @@ class Producto(models.Model):
     stock = models.PositiveIntegerField()
     imagen = models.ImageField(upload_to='productos/', blank=True, null=True)
     precio = models.IntegerField()
-    descripcion = models.CharField(max_length=150, null=True, blank=True)
+    descripcion = models.CharField(max_length=250, null=True, blank=True)
     creado_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='productos_creados')
     fecha_creacion = models.DateTimeField(auto_now_add=True)
 
