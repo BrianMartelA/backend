@@ -1,3 +1,4 @@
+from django.db import transaction
 from django.conf import settings
 from django.shortcuts import render
 from django.contrib.auth import authenticate
@@ -13,7 +14,7 @@ from rest_framework.pagination import PageNumberPagination
 from .serializers import RegisterSerializer, ProductoSerializer, UserProfileSerializer
 from rest_framework.decorators import api_view, permission_classes
 from django.contrib.auth import authenticate
-from .serializers import UserManagementSerializer, CarritoSerializer, ItemCarritoSerializer
+from .serializers import UserManagementSerializer, CarritoSerializer, ItemCarritoSerializer, ItemOrdenSerializer, OrdenSerializer
 
 from rest_framework.permissions import IsAdminUser
 from rest_framework.decorators import api_view, permission_classes, action
@@ -26,11 +27,11 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework import filters
 
 from api.models import User
-from .models import User, Carrito, ItemCarrito
+from .models import User, Carrito, ItemCarrito, Orden, ItemOrden
 from .permissions import IsAdminUser
 from .permissions import IsAdminUser as IsAdminUserCustom 
 from .serializers import RegisterSerializer, ProductoSerializer
-from .serializers import UserManagementSerializer, CarritoSerializer, ItemCarritoSerializer
+from .serializers import UserManagementSerializer, CarritoSerializer, ItemCarritoSerializer, ItemOrdenSerializer, OrdenSerializer
 
 #Cristian toco esto
 from .models import Producto
@@ -360,3 +361,62 @@ def productos_por_categoria(request):
         context={'request': request}
     )
     return paginator.get_paginated_response(serializer.data)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def procesar_pago(request):
+    try:
+        carrito = Carrito.objects.get(usuario=request.user, activo=True)
+    except Carrito.DoesNotExist:
+        return Response({"error": "No hay carrito activo"}, status=status.HTTP_404_NOT_FOUND)
+
+    # Calcular total
+    total = sum(item.producto.precio * item.cantidad for item in carrito.items.all())
+    
+    with transaction.atomic():
+        # Crear la orden
+        orden = Orden.objects.create(
+            usuario=request.user,
+            total=total
+        )
+        
+        # Recorrer cada item del carrito
+        for item in carrito.items.all():
+            producto = item.producto
+            
+            # Verificar stock
+            if producto.stock < item.cantidad:
+                return Response(
+                    {"error": f"No hay suficiente stock para {producto.nombre}"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Restar stock
+            producto.stock -= item.cantidad
+            producto.save()
+            
+            # Crear item de orden
+            ItemOrden.objects.create(
+                orden=orden,
+                producto=producto,
+                cantidad=item.cantidad,
+                precio_unitario=producto.precio
+            )
+        
+        # Desactivar carrito y crear uno nuevo
+        carrito.activo = False
+        carrito.save()
+        nuevo_carrito = Carrito.objects.create(usuario=request.user)
+
+    return Response({
+        "message": "Pago procesado exitosamente",
+        "orden_id": orden.id
+    }, status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def obtener_ordenes(request):
+    ordenes = Orden.objects.filter(usuario=request.user).order_by('-fecha_creacion')
+    # Necesitarás crear un serializador para Orden
+    serializer = OrdenSerializer(ordenes, many=True)
+    return Response(serializer.data)

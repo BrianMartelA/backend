@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from rest_framework.authtoken.serializers import AuthTokenSerializer
 
-from .models import User, Producto, Carrito, ItemCarrito
+from .models import User, Producto, Carrito, ItemCarrito, ItemOrden, Orden
 from django.utils.timezone import localtime
 import re
 
@@ -227,3 +227,17 @@ class UserProfileSerializer(serializers.ModelSerializer):
     def get_nombre_completo(self, obj):
         names = [obj.first_name, obj.last_name, obj.second_last_name]
         return " ".join(filter(None, names)) or "Sin nombre"
+
+class ItemOrdenSerializer(serializers.ModelSerializer):
+    producto = ProductoSerializer(read_only=True)
+    
+    class Meta:
+        model = ItemOrden
+        fields = ['producto', 'cantidad', 'precio_unitario']
+
+class OrdenSerializer(serializers.ModelSerializer):
+    items = ItemOrdenSerializer(many=True, read_only=True)
+    
+    class Meta:
+        model = Orden
+        fields = ['id', 'fecha_creacion', 'total', 'items']
