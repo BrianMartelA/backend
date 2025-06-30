@@ -18,10 +18,12 @@ from .views import (  # Cambia a importación explícita
     eliminar_item_carrito,
     buscar_productos,
     productos_paginados,
-    productos_por_categoria,  # 👈 Añade esto explícitamente
+    productos_por_categoria, 
     ProductoViewSet,
     CurrentUserView,
-    change_password
+    change_password,
+    procesar_pago,
+    obtener_ordenes
 )
 
 
@@ -50,6 +52,8 @@ urlpatterns = [
 
     path('user/me/', CurrentUserView.as_view(), name='current-user'),
     path('user/change_password/', change_password, name='change-password'),
+    path('carrito/procesar-pago/', procesar_pago, name='procesar_pago'),
+    path('ordenes/', obtener_ordenes, name='obtener_ordenes'),
 
     path('', include(router.urls)),  # Esto debe ir AL FINAL
 ]

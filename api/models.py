@@ -65,3 +65,20 @@ class ItemCarrito(models.Model):
 
     def __str__(self):
         return f"{self.cantidad} x {self.producto.nombre}"
+
+class Orden(models.Model):
+    usuario = models.ForeignKey(User, on_delete=models.CASCADE, related_name='ordenes')
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    total = models.IntegerField()
+
+    def __str__(self):
+        return f"Orden #{self.id} - {self.usuario.email}"
+
+class ItemOrden(models.Model):
+    orden = models.ForeignKey(Orden, on_delete=models.CASCADE, related_name='items')
+    producto = models.ForeignKey(Producto, on_delete=models.SET_NULL, null=True)
+    cantidad = models.PositiveIntegerField()
+    precio_unitario = models.IntegerField()
+
+    def __str__(self):
+        return f"{self.cantidad} x {self.producto.nombre} (Orden #{self.orden.id})"
